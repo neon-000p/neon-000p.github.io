@@ -25,17 +25,26 @@ jobs:
 
       - name: 取り寄せる
         run: |
-          set -eu
-          base=https://toeic-daily-7cea5.firebaseapp.com
+          set -u
           mkdir -p __/auth __/firebase
-          # 拡張子の無い2つは .html を付けて置く（GitHub Pages が HTML として返すように）
-          curl -fsSL "$base/__/auth/handler"        -o __/auth/handler.html
-          curl -fsSL "$base/__/auth/iframe"         -o __/auth/iframe.html
-          curl -fsSL "$base/__/auth/handler.js"     -o __/auth/handler.js
-          curl -fsSL "$base/__/auth/experiments.js" -o __/auth/experiments.js
-          curl -fsSL "$base/__/auth/iframe.js"      -o __/auth/iframe.js
-          curl -fsSL "$base/__/firebase/init.json"  -o __/firebase/init.json
+          # 拡張子の無い handler と iframe は .html を付けて置く（GitHub Pages が HTML として返すように）
+          fetch() {   # $1=Firebase 側の場所  $2=置き先。firebaseapp.com、だめなら web.app から
+            for host in toeic-daily-7cea5.firebaseapp.com toeic-daily-7cea5.web.app; do
+              code=$(curl -sSL -o "$2" -w '%{http_code}' "https://$host/$1")
+              echo "$code  https://$host/$1"
+              [ "$code" = 200 ] && return 0
+            done
+            rm -f "$2"; return 1
+          }
+          ng=0
+          fetch __/auth/handler        __/auth/handler.html    || ng=1
+          fetch __/auth/iframe         __/auth/iframe.html     || ng=1
+          fetch __/auth/handler.js     __/auth/handler.js      || ng=1
+          fetch __/auth/experiments.js __/auth/experiments.js  || ng=1
+          fetch __/auth/iframe.js      __/auth/iframe.js       || ng=1
+          fetch __/firebase/init.json  __/firebase/init.json   || ng=1
           ls -la __/auth __/firebase
+          exit $ng
 
       - name: 変わっていればコミット
         id: commit
