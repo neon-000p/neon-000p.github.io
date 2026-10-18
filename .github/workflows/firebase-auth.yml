@@ -1,6 +1,7 @@
 name: Firebase のログイン用ファイルを取り込む
 
 # AkariEN のログインの受け渡しに使うファイルを、Firebase から取り寄せて __/auth/ に置く。
+# __/firebase/init.json は Firebase Hosting を使っていないので向こうに無い。手で置いてある（値は公開されてよいもの）。
 # Firebase 側が更新されても追いつけるよう、週1回も確かめる（変わっていなければコミットしない）。
 on:
   workflow_dispatch:
@@ -26,7 +27,7 @@ jobs:
       - name: 取り寄せる
         run: |
           set -u
-          mkdir -p __/auth __/firebase
+          mkdir -p __/auth
           # 拡張子の無い handler と iframe は .html を付けて置く（GitHub Pages が HTML として返すように）
           fetch() {   # $1=Firebase 側の場所  $2=置き先。firebaseapp.com、だめなら web.app から
             for host in toeic-daily-7cea5.firebaseapp.com toeic-daily-7cea5.web.app; do
@@ -42,7 +43,6 @@ jobs:
           fetch __/auth/handler.js     __/auth/handler.js      || ng=1
           fetch __/auth/experiments.js __/auth/experiments.js  || ng=1
           fetch __/auth/iframe.js      __/auth/iframe.js       || ng=1
-          fetch __/firebase/init.json  __/firebase/init.json   || ng=1
           ls -la __/auth __/firebase
           exit $ng
 
